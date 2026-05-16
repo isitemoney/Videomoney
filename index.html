@@ -37,7 +37,6 @@
 </head>
 <body>
 
-<!-- ========== شريط التنقل مع البانر المتحرك ========== -->
 <nav id="nav" class="hidden glass-card sticky top-0 z-50 px-6 py-3 flex flex-col border-b border-white/5">
     <div class="flex justify-between items-center w-full">
         <div class="flex flex-col text-right">
@@ -62,7 +61,6 @@
     <p class="text-blue-400 font-bold">جاري تحويلك للرابط الحصري...</p>
 </div>
 
-<!-- ========== صفحة تسجيل الدخول ========== -->
 <div id="auth-section" class="min-h-screen flex items-center justify-center p-4 hero-gradient">
     <div class="glass-card p-8 rounded-[2.5rem] w-full max-w-md border-t-4 border-blue-500 shadow-2xl text-center">
         <div class="text-5xl mb-4">💰</div>
@@ -92,7 +90,6 @@
     </div>
 </div>
 
-<!-- ========== لوحة التحكم ========== -->
 <div id="dashboard-section" class="hidden max-w-5xl mx-auto p-4 space-y-6">
     <div class="glass-card p-4 rounded-2xl border border-amber-500/30 flex justify-between items-center">
         <div>
@@ -165,7 +162,6 @@
     </div>
 </div>
 
-<!-- ========== لوحة الأدمن ========== -->
 <div id="admin-panel" class="hidden max-w-5xl mx-auto p-4 py-10 border-t border-red-500/20 space-y-6">
     <div class="glass-card p-6 rounded-[2rem] border border-amber-500/30">
         <h2 class="text-xl font-black text-amber-400 mb-4 italic uppercase">📢 إدارة البانر الإعلاني</h2>
@@ -228,21 +224,19 @@ const db = firebase.database();
 const auth = firebase.auth();
 const ADMIN_EMAILS = ["xxetali46@gmail.com", "xxetali47@gmail.com"];
 
-// ========== بصمة الجهاز ==========
 function getDeviceFingerprint() {
     const data = [navigator.userAgent, navigator.language, screen.width+'x'+screen.height, screen.colorDepth, new Date().getTimezoneOffset(), !!navigator.cookieEnabled, navigator.hardwareConcurrency||'unknown', navigator.deviceMemory||'unknown', navigator.platform||'unknown'].join('|');
     let hash=0; for(let i=0;i<data.length;i++){const c=data.charCodeAt(i);hash=((hash<<5)-hash)+c;hash=hash&hash;} return 'fp_'+Math.abs(hash).toString(36);
 }
 
-// ========== إشعارات وهمية ==========
 function generateRandomUser(){const l='abcdefghijklmnopqrstuvwxyz',n='0123456789';let nm='';for(let i=0;i<Math.floor(Math.random()*6)+4;i++)nm+=l.charAt(Math.floor(Math.random()*l.length));for(let i=0;i<Math.floor(Math.random()*4)+2;i++)nm+=n.charAt(Math.floor(Math.random()*n.length));return nm;}
 const fakeActions=["ربح","سحب","حقق","جمع","كسب"],fakeAmounts=["$3.50","$5.00","$7.25","$10.00","$12.50","$15.00","$20.00","$25.00","$4.75","$8.30","$6.40","$9.10","$11.20","$13.80","$16.50","$18.00","$22.00","$27.50","$30.00","$35.00","$40.00","$50.00"];
+
 function showFakeNotification(){const u=generateRandomUser(),a=fakeActions[Math.floor(Math.random()*fakeActions.length)],am=fakeAmounts[Math.floor(Math.random()*fakeAmounts.length)],d=document.createElement('div');d.className='fake-notification';d.innerHTML=`<div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white font-black text-xs">💰</div><div><p class="text-xs font-bold text-white">${u} ${a} <span class="text-emerald-400">${am}</span></p><p class="text-[8px] text-slate-500">منذ لحظات 🕐</p></div>`;document.body.appendChild(d);setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);},5000);}
 let fakeNotifInterval=null;
 function startFakeNotifications(){if(fakeNotifInterval)return;setTimeout(showFakeNotification,3000);fakeNotifInterval=setInterval(()=>{setTimeout(showFakeNotification,Math.random()*5000);},12000);}
 function stopFakeNotifications(){if(fakeNotifInterval){clearInterval(fakeNotifInterval);fakeNotifInterval=null;}}
 
-// ========== تسجيل Google ==========
 function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).then(result => {
@@ -271,42 +265,33 @@ function signInWithGoogle() {
                 }
             }
         });
-    }).catch(err => showNotification(err.message, "blue"));
+    }).catch(err => showNotification("خطأ: " + err.message, "blue"));
 }
 
-// ========== دخول بالبريد فقط ==========
 function signInWithEmail() {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
     if (!e || !p) return showNotification("يرجى إدخال البريد وكلمة المرور", "blue");
-    auth.signInWithEmailAndPassword(e, p).catch(err => showNotification(err.message, "blue"));
+    auth.signInWithEmailAndPassword(e, p).catch(err => showNotification("خطأ: " + err.message, "blue"));
 }
 
-// ========== البانر المتحرك ==========
 let bannerLink="";
 function loadBanner(){
     db.ref('settings/banner').on('value',snap=>{
         const d=snap.val();
-        const movingBanner = document.getElementById('moving-banner');
-        const movingText = document.getElementById('moving-banner-text');
-        if(d && d.text && d.visible !== false){
-            movingBanner.classList.remove('hidden');
-            movingText.innerText = '📢 ' + d.text + ' 📢';
-            bannerLink = d.link || "";
-        } else {
-            movingBanner.classList.add('hidden');
-        }
+        const mb=document.getElementById('moving-banner');
+        const mt=document.getElementById('moving-banner-text');
+        if(d&&d.text&&d.visible!==false){mb.classList.remove('hidden');mt.innerText='📢 '+d.text+' 📢';bannerLink=d.link||"";}
+        else{mb.classList.add('hidden');}
     });
 }
-function handleBannerClick(){if(bannerLink && bannerLink.startsWith('http')) window.open(bannerLink, '_blank');}
+function handleBannerClick(){if(bannerLink&&bannerLink.startsWith('http'))window.open(bannerLink,'_blank');}
 function updateBanner(){const t=document.getElementById('admin-banner-text').value.trim(),l=document.getElementById('admin-banner-link').value.trim();if(!t)return showNotification("يرجى كتابة نص الإعلان","blue");db.ref('settings/banner').set({text:t,link:l||"",visible:true}).then(()=>{showNotification("تم تحديث البانر ✅","green");document.getElementById('admin-banner-text').value="";document.getElementById('admin-banner-link').value="";});}
 function toggleBanner(){db.ref('settings/banner/visible').once('value',snap=>{const c=snap.val();db.ref('settings/banner').update({visible:c===false?true:false});showNotification(c===false?'تم إظهار البانر ✅':'تم إخفاء البانر ✅','green');});}
 
-// ========== الضغطات السرية ==========
 let secretTapCount=0,secretTapTimer=null;
 function handleSecretTap(){secretTapCount++;const ind=document.getElementById('secret-indicator');ind.classList.remove('hidden');ind.innerText=`🔒 ${secretTapCount}/7`;clearTimeout(secretTapTimer);secretTapTimer=setTimeout(()=>{secretTapCount=0;ind.classList.add('hidden');},3000);if(secretTapCount===7){secretTapCount=0;ind.classList.add('hidden');const u=auth.currentUser;if(u&&ADMIN_EMAILS.includes(u.email)){const p=document.getElementById('admin-panel');p.classList.toggle('hidden');if(!p.classList.contains('hidden')){loadAdminPanel();showNotification('🔓 تم فتح لوحة التحكم السرية','purple');}else{showNotification('🔒 تم إغلاق لوحة التحكم','blue');}}else{showNotification('⛔ ليس لديك صلاحية الوصول','blue');}}}
 
-// ========== المستويات الجديدة ==========
 const LEVELS={bronze:{min:0,commission:0.02,name:"برونزي",color:"level-bronze",next:100},silver:{min:100,commission:0.03,name:"فضي",color:"level-silver",next:300},gold:{min:300,commission:0.05,name:"ذهبي",color:"level-gold",next:500},diamond:{min:500,commission:0.07,name:"الماسي",color:"level-diamond",next:700}};
 function getUserLevel(c){if(c>=500)return LEVELS.diamond;if(c>=300)return LEVELS.gold;if(c>=100)return LEVELS.silver;return LEVELS.bronze;}
 
@@ -314,8 +299,7 @@ let GLOBAL_REDIRECT_LINK="https://hp.funroom.store/a/8nw6emt2";
 db.ref('settings/redirectLink').on('value',snap=>{if(snap.val()){GLOBAL_REDIRECT_LINK=snap.val();const d=document.getElementById('current-link-display');if(d)d.innerText="الرابط النشط: "+GLOBAL_REDIRECT_LINK;}});
 function updateGlobalLink(){const l=document.getElementById('admin-new-link').value.trim();if(!l.startsWith('http'))return showNotification("يرجى إدخال رابط صحيح يبدأ بـ http","blue");db.ref('settings').update({redirectLink:l}).then(()=>{showNotification("تم تحديث رابط التحويل بنجاح ✅","green");document.getElementById('admin-new-link').value="";});}
 
-// ========== نظام النقرات (كل 4 = 1) ==========
-function checkAndRedirect(){const p=new URLSearchParams(window.location.search);const refId=p.get("ref");if(refId){if(sessionStorage.getItem('redirecting'))return;sessionStorage.setItem('redirecting','true');document.getElementById('loading-screen').classList.remove('hidden');const fp=getDeviceFingerprint();fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(data=>{const ip=data.ip,uk=ip+'_'+fp;db.ref('clicks_log/'+refId).once('value').then(snap=>{const log=snap.val()||{};if(!Object.values(log).some(e=>e===uk)){db.ref('clicks_log/'+refId).push(uk);db.ref('raw_clicks/'+refId).once('value').then(rawSnap=>{const rawClicks=rawSnap.val()||{};let clickCount=0;Object.values(rawClicks).forEach(entry=>{if(entry===uk)clickCount++;});db.ref('raw_clicks/'+refId).push(uk);if((clickCount+1)%4===0){db.ref('users/'+refId).once('value').then(us=>{const ud=us.val()||{},lv=getUserLevel(ud.clicks||0),com=lv.commission,today=new Date().toISOString().split('T')[0];db.ref('daily_log/'+refId+'/'+today).transaction(lg=>{if(!lg)lg={date:today,clicks:0,earnings:0,refEarnings:0,clickRate:com};lg.clicks=(lg.clicks||0)+1;lg.earnings=Number(((lg.earnings||0)+com).toFixed(3));lg.clickRate=com;return lg;});db.ref('users/'+refId).transaction(d=>{if(d){d.clicks=(d.clicks||0)+1;d.todayBalance=Number(((d.todayBalance||0)+com).toFixed(2));d.totalBalance=Number(((d.totalBalance||0)+com).toFixed(2));}return d;});if(ud.referredBy){db.ref('users/'+ud.referredBy).transaction(rd=>{if(rd){const rc=Number((com*0.1).toFixed(3));rd.refEarnings=Number(((rd.refEarnings||0)+rc).toFixed(3));rd.todayBalance=Number(((rd.todayBalance||0)+rc).toFixed(2));rd.totalBalance=Number(((rd.totalBalance||0)+rc).toFixed(2));db.ref('daily_log/'+ud.referredBy+'/'+today).transaction(lg=>{if(!lg)lg={date:today,clicks:0,earnings:0,refEarnings:0,clickRate:0};lg.refEarnings=Number(((lg.refEarnings||0)+rc).toFixed(3));return lg;});}return rd;});}}});});}window.location.replace(GLOBAL_REDIRECT_LINK);});}).catch(()=>{window.location.replace(GLOBAL_REDIRECT_LINK);});}}
+function checkAndRedirect(){const p=new URLSearchParams(window.location.search);const refId=p.get("ref");if(refId){if(sessionStorage.getItem('redirecting'))return;sessionStorage.setItem('redirecting','true');document.getElementById('loading-screen').classList.remove('hidden');const fp=getDeviceFingerprint();fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(data=>{const ip=data.ip,uk=ip+'_'+fp;db.ref('clicks_log/'+refId).once('value').then(snap=>{const log=snap.val()||{};if(!Object.values(log).some(e=>e===uk)){db.ref('clicks_log/'+refId).push(uk);db.ref('raw_clicks/'+refId).once('value').then(rawSnap=>{const rawClicks=rawSnap.val()||{};let clickCount=0;Object.values(rawClicks).forEach(entry=>{if(entry===uk)clickCount++;});db.ref('raw_clicks/'+refId).push(uk);if((clickCount+1)%4===0){db.ref('users/'+refId).once('value').then(us=>{const ud=us.val()||{},lv=getUserLevel(ud.clicks||0),com=lv.commission,today=new Date().toISOString().split('T')[0];db.ref('daily_log/'+refId+'/'+today).transaction(lg=>{if(!lg)lg={date:today,clicks:0,earnings:0,refEarnings:0,clickRate:com};lg.clicks=(lg.clicks||0)+1;lg.earnings=Number(((lg.earnings||0)+com).toFixed(3));lg.clickRate=com;return lg;});db.ref('users/'+refId).transaction(d=>{if(d){d.clicks=(d.clicks||0)+1;d.todayBalance=Number(((d.todayBalance||0)+com).toFixed(2));d.totalBalance=Number(((d.totalBalance||0)+com).toFixed(2));}return d;});if(ud.referredBy){db.ref('users/'+ud.referredBy).transaction(rd=>{if(rd){const rc=Number((com*0.1).toFixed(3));rd.refEarnings=Number(((rd.refEarnings||0)+rc).toFixed(3));rd.todayBalance=Number(((rd.todayBalance||0)+rc).toFixed(2));rd.totalBalance=Number(((rd.totalBalance||0)+rc).toFixed(2));db.ref('daily_log/'+ud.referredBy+'/'+today).transaction(lg=>{if(!lg)lg={date:today,clicks:0,earnings:0,refEarnings:0,clickRate:0};lg.refEarnings=Number(((lg.refEarnings||0)+rc).toFixed(3));return lg;});}return rd;});}}});}window.location.replace(GLOBAL_REDIRECT_LINK);});}).catch(()=>{window.location.replace(GLOBAL_REDIRECT_LINK);});}}
 
 function claimDailyBonus(){const u=auth.currentUser;if(!u)return;const today=new Date().toDateString();db.ref('users/'+u.uid+'/lastBonusDay').once('value',snap=>{if(snap.val()===today)return showNotification("لقد حصلت على مكافأتك اليومية مسبقاً ⏰","blue");const bonus=Math.floor(Math.random()*10)+1;db.ref('users/'+u.uid).update({lastBonusDay:today,todayBalance:firebase.database.ServerValue.increment(bonus/100),totalBalance:firebase.database.ServerValue.increment(bonus/100)}).then(()=>{document.getElementById('bonus-btn').classList.add('hidden');showNotification(`🎁 مبروك! ربحت ${bonus} سنت مكافأة يومية`,"green");});});}
 
