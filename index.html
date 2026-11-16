@@ -587,7 +587,32 @@ function goToDashboard(){document.getElementById('withdraw-page').classList.add(
 
 function updateWithdrawPage(){const u=auth.currentUser;if(!u)return;db.ref('users/'+u.uid).once('value',snap=>{const d=snap.val();if(d){document.getElementById('withdraw-balance').innerText='$'+(d.withdrawableBalance||0).toFixed(2);}});}
 
-function loadWithdrawHistory(){const u=auth.currentUser;if(!u)return;db.ref('withdrawals').once('value',snap=>{const data=snap.val();const container=document.getElementById('withdraw-history-table');if(!data){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===u.uid);if(withdrawals.length===0){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}let html='<div class="overflow-x-auto"><table class="w-full text-[10px] text-right border-collapse"><thead><tr class="text-slate-400 border-b border-white/10"><th class="p-2">التاريخ</th><th class="p-2">المبلغ</th><th class="p-2">الطريقة</th><th class="p-2">التواصل</th><th class="p-2">الحالة</th></tr></thead><tbody>';withdrawals.forEach(w=>{const date=new Date(w.timestamp).toLocaleDateString('ar-IQ');const sc=w.status==='paid'?'text-emerald-400':'text-amber-400';const st=w.status==='paid'?'✅ تم الدفع':'⏳ قيد المراجعة';html+=`<tr class="border-b border-white/5 hover:bg-white/5"><td class="p-2 font-bold text-white">${date}</td><td class="p-2 text-emerald-400 font-black">$${w.amount}</td><td class="p-2 text-blue-400 font-bold">${w.method}</td><td class="p-2 text-purple-400 font-bold">${w.contact||'-'}</td><td class="p-2 font-black ${sc}">${st}</td></tr>`;});html+='</tbody></table></div>';container.innerHTML=html;});}
+function loadWithdrawHistory(){
+    const u=auth.currentUser;
+    if(!u)return;
+    db.ref('withdrawals').once('value',snap=>{
+        const data=snap.val();
+        const container=document.getElementById('withdraw-history-table');
+        if(!data){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}
+        const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===u.uid);
+        if(withdrawals.length===0){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}
+        
+        let html='<div class="overflow-x-auto"><table class="w-full text-[10px] text-right border-collapse"><thead><tr class="text-slate-400 border-b border-white/10"><th class="p-2">تاريخ الطلب</th><th class="p-2">المبلغ</th><th class="p-2">الطريقة</th><th class="p-2">الحالة</th></tr></thead><tbody>';
+        withdrawals.forEach(w=>{
+            const paid=w.status==='paid';
+            const st=paid?'✅ تم الدفع':'⏳ قيد المراجعة';
+            const sc=paid?'text-emerald-400':'text-amber-400';
+            html+=`<tr class="border-b border-white/5 hover:bg-white/5">
+                <td class="p-2 font-bold text-white">${w.requestDate || '-'}</td>
+                <td class="p-2 text-emerald-400 font-black">$${w.amount}</td>
+                <td class="p-2 text-blue-400 font-bold">${w.method}</td>
+                <td class="p-2 font-black ${sc}">${st}</td>
+            </tr>`;
+        });
+        html+='</tbody></table></div>';
+        container.innerHTML=html;
+    });
+}
 
 function signInWithGoogle(){
     const provider=new firebase.auth.GoogleAuthProvider();
@@ -800,12 +825,164 @@ auth.onAuthStateChanged(u=>{if(u){document.getElementById('auth-section').classL
     }
 });
 
-function renderHistory(uid){db.ref('withdrawals').on('value',snap=>{const list=document.getElementById('user-withdraw-history'),data=snap.val();list.innerHTML="";if(!data)return;const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===uid);if(withdrawals.length===0){list.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';return;}withdrawals.slice(0,5).forEach(w=>{const paid=w.status==="paid";list.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border border-white/5"><div class="text-right"><p class="text-lg text-white font-black">$${w.amount}</p><p class="text-[9px] text-slate-500 font-bold italic lowercase">${w.method} | ${w.contact||'-'}</p></div><div class="text-[10px] font-black ${paid?'text-emerald-400':'text-amber-400'}">${paid?'تم الدفع ✅':'قيد المراجعة'}</div></div>`;});});}
+// ========== سجل السحوبات في واجهة المروج (مع وقت الطلب ووقت الدفع والملاحظة) ==========
+function renderHistory(uid){
+    db.ref('withdrawals').on('value', snap => {
+        const list = document.getElementById('user-withdraw-history');
+        const data = snap.val();
+        list.innerHTML = "";
+        if(!data) {
+            list.innerHTML = '<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';
+            return;
+        }
+        
+        const withdrawals = Object.keys(data).reverse().map(k => ({id: k, ...data[k]})).filter(w => w.uid === uid);
+        if(withdrawals.length === 0){
+            list.innerHTML = '<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';
+            return;
+        }
+        
+        withdrawals.slice(0, 5).forEach(w => {
+            const paid = w.status === "paid";
+            list.innerHTML += `
+            <div class="glass-card p-4 rounded-2xl space-y-2 border border-white/5">
+                <div class="flex justify-between items-center">
+                    <div class="text-right">
+                        <p class="text-lg text-white font-black">$${w.amount}</p>
+                        <p class="text-[9px] text-slate-400 font-bold">${w.method} | ${w.account}</p>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-lg ${paid ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
+                            ${paid ? 'تم الدفع ✅' : 'قيد المراجعة ⏳'}
+                        </span>
+                    </div>
+                </div>
+                <div class="border-t border-white/5 pt-2 text-[9px] text-slate-400 space-y-1">
+                    <p>🕒 وقت الطلب: <span class="text-slate-300 font-bold">${w.requestDate || 'غير متوفر'}</span></p>
+                    ${paid ? `<p>💸 وقت الدفع: <span class="text-emerald-400 font-bold">${w.paidDate || 'غير متوفر'}</span></p>` : ''}
+                    ${paid && w.adminNote ? `<p class="bg-slate-900/80 p-2 rounded-xl border border-white/5 text-amber-300 mt-1">📝 ملاحظة الإدارة: ${w.adminNote}</p>` : ''}
+                </div>
+            </div>`;
+        });
+    });
+}
 
-function confirmWithdraw(){const amt=parseFloat(document.getElementById('w-amount').value);const acc=document.getElementById('w-account').value.trim();const con=document.getElementById('w-contact').value.trim();const met=selectedPaymentMethod;const contactMethod=selectedContactMethod;const fullContact=contactMethod+': '+con;if(!amt||amt<10)return showNotification("الحد الأدنى للسحب 10$","blue");if(!acc)return showNotification("يرجى إدخال رقم الحساب أو المحفظة","blue");if(!con)return showNotification("يرجى إدخال معلومات التواصل","blue");const uRef=db.ref('users/'+auth.currentUser.uid);uRef.once('value',snap=>{const bal=snap.val().withdrawableBalance||0;if(amt>bal)return showNotification("رصيدك غير كافٍ","blue");uRef.update({withdrawableBalance:Number((bal-amt).toFixed(2))});db.ref('withdrawals').push({uid:auth.currentUser.uid,username:snap.val().username,amount:amt,method:met,account:acc,contact:fullContact,status:"pending",timestamp:Date.now()}).then(()=>{document.getElementById('withdraw-modal').classList.remove('hidden');document.getElementById('w-amount').value="";document.getElementById('w-account').value="";document.getElementById('w-contact').value="";updateWithdrawPage();loadWithdrawHistory();});});}
+// ========== تقديم طلب سحب جديد (مع حفظ وقت الطلب) ==========
+function confirmWithdraw(){
+    const amt = parseFloat(document.getElementById('w-amount').value);
+    const acc = document.getElementById('w-account').value.trim();
+    const con = document.getElementById('w-contact').value.trim();
+    const met = selectedPaymentMethod;
+    const contactMethod = selectedContactMethod;
+    const fullContact = contactMethod + ': ' + con;
+    
+    if(!amt || amt < 10) return showNotification("الحد الأدنى للسحب 10$", "blue");
+    if(!acc) return showNotification("يرجى إدخال رقم الحساب أو المحفظة", "blue");
+    if(!con) return showNotification("يرجى إدخال معلومات التواصل", "blue");
+    
+    const uRef = db.ref('users/' + auth.currentUser.uid);
+    uRef.once('value', snap => {
+        const bal = snap.val().withdrawableBalance || 0;
+        if(amt > bal) return showNotification("رصيدك غير كافٍ", "blue");
+        
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('ar-IQ') + ' - ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-function loadAdminPanel(){db.ref('users').on('value',snap=>{const users=snap.val()||{};let tc=0,au=0,te={name:'-',total:0},pc=0;Object.values(users).forEach(u=>{tc+=u.clicks||0;if(u.clicks>0)au++;if((u.totalBalance||0)>te.total){te={name:u.username,total:u.totalBalance};}});document.getElementById('admin-total-clicks').innerText=tc;document.getElementById('admin-active-users').innerText=au;document.getElementById('admin-top-earner').innerText=te.name+' ($'+te.total.toFixed(2)+')';db.ref('withdrawals').on('value',ws=>{const wd=ws.val()||{};pc=Object.values(wd).filter(w=>w.status==='pending').length;document.getElementById('admin-pending-count').innerText=pc;});});db.ref('withdrawals').on('value',snap=>{const cont=document.getElementById('admin-withdrawals');cont.innerHTML="";const data=snap.val();if(!data)return;Object.keys(data).reverse().forEach(key=>{const w=data[key];if(w.status==="paid")return;cont.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border-r-4 border-amber-500"><div class="text-right"><h4 class="font-black text-white">${w.username}</h4><p class="text-xs text-amber-400 font-bold">$${w.amount}</p><p class="text-[10px] text-slate-500 uppercase">${w.method} - ${w.account} | ${w.contact||'-'}</p></div><button onclick="markAsPaid('${key}')" class="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">إتمام</button></div>`;});});}
-function markAsPaid(id){db.ref('withdrawals/'+id).update({status:"paid"});}
+        uRef.update({ withdrawableBalance: Number((bal - amt).toFixed(2)) });
+        db.ref('withdrawals').push({
+            uid: auth.currentUser.uid,
+            username: snap.val().username,
+            amount: amt,
+            method: met,
+            account: acc,
+            contact: fullContact,
+            status: "pending",
+            requestDate: formattedDate,
+            timestamp: Date.now()
+        }).then(() => {
+            document.getElementById('withdraw-modal').classList.remove('hidden');
+            document.getElementById('w-amount').value = "";
+            document.getElementById('w-account').value = "";
+            document.getElementById('w-contact').value = "";
+            updateWithdrawPage();
+            loadWithdrawHistory();
+        });
+    });
+}
+
+// ========== تحميل لوحة الأدمن (مع خانة كتابة الملاحظة وأزرار الإتمام) ==========
+function loadAdminPanel(){
+    db.ref('users').on('value', snap => {
+        const users = snap.val() || {};
+        let tc = 0, au = 0, te = {name:'-', total:0}, pc = 0;
+        Object.values(users).forEach(u => {
+            tc += u.clicks || 0;
+            if(u.clicks > 0) au++;
+            if((u.totalBalance || 0) > te.total) {
+                te = { name: u.username, total: u.totalBalance };
+            }
+        });
+        document.getElementById('admin-total-clicks').innerText = tc;
+        document.getElementById('admin-active-users').innerText = au;
+        document.getElementById('admin-top-earner').innerText = te.name + ' ($' + te.total.toFixed(2) + ')';
+        
+        db.ref('withdrawals').on('value', ws => {
+            const wd = ws.val() || {};
+            pc = Object.values(wd).filter(w => w.status === 'pending').length;
+            document.getElementById('admin-pending-count').innerText = pc;
+        });
+    });
+    
+    db.ref('withdrawals').on('value', snap => {
+        const cont = document.getElementById('admin-withdrawals');
+        cont.innerHTML = "";
+        const data = snap.val();
+        if(!data) {
+            cont.innerHTML = '<p class="text-[10px] text-slate-500 text-center">لا توجد طلبات سحب معلقة</p>';
+            return;
+        }
+        
+        Object.keys(data).reverse().forEach(key => {
+            const w = data[key];
+            if(w.status === "paid") return;
+            
+            cont.innerHTML += `
+            <div class="glass-card p-4 rounded-2xl border-r-4 border-amber-500 space-y-3">
+                <div class="flex justify-between items-center">
+                    <div class="text-right">
+                        <h4 class="font-black text-white">${w.username}</h4>
+                        <p class="text-xs text-amber-400 font-bold">$${w.amount}</p>
+                        <p class="text-[10px] text-slate-400 uppercase">طريقة الدفع: <span class="text-blue-400">${w.method}</span></p>
+                        <p class="text-[10px] text-slate-400">الحساب: <span class="text-white font-mono">${w.account}</span></p>
+                        <p class="text-[10px] text-slate-400">التواصل: <span class="text-purple-400">${w.contact || '-'}</span></p>
+                        <p class="text-[9px] text-slate-500 mt-1">🕒 وقت الطلب: ${w.requestDate || 'غير متوفر'}</p>
+                    </div>
+                </div>
+                <div>
+                    <input type="text" id="admin_note_${key}" placeholder="اكتب ملاحظة الدفع هنا (مثلاً: رقم التحويل زين كاش...)" class="admin-input-sm w-full">
+                </div>
+                <button onclick="markAsPaidWithNote('${key}')" class="bg-emerald-500 hover:bg-emerald-600 text-white w-full py-2.5 rounded-xl text-[10px] font-black shadow-lg transition">✅ إتمام الدفع مع الملاحظة</button>
+            </div>`;
+        });
+    });
+}
+
+// ========== تأكيد الدفع مع حفظ الملاحظة ووقت الدفع ==========
+function markAsPaidWithNote(id) {
+    const noteInput = document.getElementById('admin_note_' + id);
+    const adminNote = noteInput ? noteInput.value.trim() : "";
+    
+    const now = new Date();
+    const paidDateFormatted = now.toLocaleDateString('ar-IQ') + ' - ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    db.ref('withdrawals/' + id).update({
+        status: "paid",
+        adminNote: adminNote || "تم التحويل بنجاح",
+        paidDate: paidDateFormatted
+    }).then(() => {
+        showNotification("تم إتمام السحب وتسجيل الملاحظة بنجاح ✅", "green");
+    });
+}
 
 function copyToClipboard(elementId, successMessage, type = "blue") {
     const inputElement = document.getElementById(elementId);
