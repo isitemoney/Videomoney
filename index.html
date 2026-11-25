@@ -17,7 +17,7 @@
         .btn-purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); transition: all 0.2s; }
         .btn-google { background: #fff; color: #1a1a1a; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 900; }
         .btn-google:hover { background: #f1f1f1; }
-        input, select, textarea { background: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; }
+        input, select { background: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; }
         .uid-badge { 
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
@@ -224,7 +224,7 @@
 </div>
 
 <!-- ========== لوحة الأدمن ========== -->
-<div id="admin-panel" class="hidden max-w-5xl mx-auto p-4 py-10 border-t border-red-500/20 space-y-6">
+<div id="admin-panel" class="hidden max-w-6xl mx-auto p-4 py-10 border-t border-red-500/20 space-y-6">
     <div class="glass-card p-6 rounded-[2rem] border border-amber-500/30">
         <h2 class="text-xl font-black text-amber-400 mb-4 italic uppercase">📢 إدارة البانر الإعلاني</h2>
         <div class="flex flex-col gap-4">
@@ -236,11 +236,11 @@
     </div>
     
     <div class="glass-card p-6 rounded-[2rem] border border-blue-500/30">
-        <h2 class="text-xl font-black text-blue-400 mb-4 italic uppercase">⚙️ إدارة الروابط</h2>
+        <h2 class="text-xl font-black text-blue-400 mb-4 italic uppercase">⚙️ إدارة الروابط والإعدادات الافتراضية</h2>
         <div class="flex flex-col gap-4">
-            <p class="text-xs text-slate-400 font-bold">الرابط الحالي:</p>
-            <div class="flex gap-2"><input type="text" id="admin-new-link" placeholder="ضع الرابط الجديد هنا..." class="w-full p-4 rounded-2xl text-xs font-bold outline-none"><button onclick="updateGlobalLink()" class="btn-primary px-6 rounded-2xl font-black text-xs">تحديث</button></div>
-            <p id="current-link-display" class="text-[10px] text-emerald-400 font-mono"></p>
+            <p class="text-xs text-slate-400 font-bold">الرابط الافتراضي للتحويل (لجميع المروجين ما لم يُخصص لهم رابط):</p>
+            <div class="flex gap-2"><input type="text" id="admin-new-link" placeholder="ضع الرابط الافتراضي الجديد هنا..." class="w-full p-4 rounded-2xl text-xs font-bold outline-none"><button onclick="updateGlobalLink()" class="btn-primary px-6 rounded-2xl font-black text-xs">تحديث الافتراضي</button></div>
+            <p id="current-link-display" class="text-[10px] text-emerald-400 font-mono break-all"></p>
             
             <div class="border-t border-white/10 pt-4 mt-2">
                 <p class="text-xs text-amber-400 font-bold mb-3">💰 الإعدادات الافتراضية (للمستخدمين الجدد):</p>
@@ -263,12 +263,12 @@
         </div>
     </div>
 
-    <!-- ====== قسم التحكم والمروجين مع أزرار الفلترة المالية والنشاط ====== -->
+    <!-- ====== قسم التحكم والمروجين مع رابط مخصص لكل مروج ====== -->
     <div class="glass-card p-6 rounded-[2rem] border border-purple-500/30">
         <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
             <div>
-                <h2 class="text-xl font-black text-purple-400 italic uppercase">👤 إدارة المروجين والإحصائيات المالية</h2>
-                <p class="text-[10px] text-slate-400">مجموع السحوبات، الأرباح، الرابط المخصص، وتاريخ الانضمام لكل مروج</p>
+                <h2 class="text-xl font-black text-purple-400 italic uppercase">👤 إدارة المروجين والروابط المخصصة</h2>
+                <p class="text-[10px] text-slate-400">تخصيص رابط تحويل مستقل لكل مروج أو تركه على الرابط الافتراضي</p>
             </div>
             <!-- أزرار الفلترة -->
             <div class="flex gap-1 bg-slate-950 p-1.5 rounded-2xl border border-white/10 text-[10px] font-bold">
@@ -279,8 +279,19 @@
             </div>
         </div>
         
+        <!-- رأس الجدول -->
+        <div class="hidden lg:grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 mb-3 px-2">
+            <div class="col-span-2">المعرف / الانضمام</div>
+            <div class="col-span-2">الاسم</div>
+            <div class="col-span-1">السعر ($)</div>
+            <div class="col-span-1">الضغطات</div>
+            <div class="col-span-3">رابط مخصص (اختياري)</div>
+            <div class="col-span-1 text-center">المالي</div>
+            <div class="col-span-2 text-center">الإجراءات</div>
+        </div>
+        
         <!-- قائمة المستخدمين -->
-        <div id="admin-users-list" class="space-y-3 max-h-[600px] overflow-y-auto">
+        <div id="admin-users-list" class="space-y-3 max-h-[650px] overflow-y-auto">
             <p class="text-[10px] text-slate-500 text-center py-8">جاري تحميل المستخدمين...</p>
         </div>
     </div>
@@ -297,19 +308,6 @@
     <div class="glass-card p-6 rounded-[2rem] border border-red-500/30">
         <h2 class="text-xl font-black text-red-500 mb-6 italic uppercase underline tracking-tighter">طلبات السحب المعلقة</h2>
         <div id="admin-withdrawals" class="space-y-4"></div>
-    </div>
-</div>
-
-<!-- مودال كتابة رسالة عند الدفع أو الرفض -->
-<div id="review-modal" class="modal-overlay hidden">
-    <div class="modal-box">
-        <h3 id="review-title" class="text-xl font-black mb-2"></h3>
-        <p id="review-sub" class="text-xs text-slate-400 mb-4"></p>
-        <textarea id="review-note" rows="3" placeholder="اكتب رسالة للمروج (مثال: تم التحويل / سبب الرفض)..." class="w-full p-4 rounded-2xl text-sm text-right outline-none mb-4"></textarea>
-        <div class="grid grid-cols-2 gap-3">
-            <button id="review-confirm-btn" onclick="submitReviewAction()" class="py-3 rounded-2xl font-black text-white">تأكيد</button>
-            <button onclick="closeReviewModal()" class="bg-slate-700 py-3 rounded-2xl font-black text-white">إلغاء</button>
-        </div>
     </div>
 </div>
 
@@ -345,10 +343,19 @@ let selectedPaymentMethod = "زين كاش";
 let selectedContactMethod = "تليجرام";
 let GLOBAL_BASE_PRICE = 0.02;
 let GLOBAL_CLICKS_NEEDED = 9;
+let GLOBAL_REDIRECT_LINK = "https://hp.funroom.store/a/8nw6emt2";
 let currentFilter = 'all';
 let allUsersData = {};
 let allWithdrawalsData = {};
-let pendingReview = null;
+const dailyResetCheckedSessions = new Set();
+
+function escapeAttr(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function isValidUrl(url) {
+    return typeof url === 'string' && /^https?:\/\/.+/i.test(url.trim());
+}
 
 // ========== نظام الـ UID القصير ==========
 function generateShortUID() {
@@ -358,13 +365,13 @@ function generateShortUID() {
 // ========== تحميل الإعدادات من قاعدة البيانات ==========
 function loadSettings() {
     db.ref('settings/basePrice').on('value', snap => {
-        if (snap.val()) GLOBAL_BASE_PRICE = snap.val();
+        if (snap.val() !== null && snap.val() !== undefined) GLOBAL_BASE_PRICE = Number(snap.val());
         const display = document.getElementById('current-base-price-display');
         if (display) display.innerText = '💰 السعر الافتراضي: $' + GLOBAL_BASE_PRICE.toFixed(3);
     });
     
     db.ref('settings/clicksNeeded').on('value', snap => {
-        if (snap.val()) GLOBAL_CLICKS_NEEDED = snap.val();
+        if (snap.val() !== null && snap.val() !== undefined) GLOBAL_CLICKS_NEEDED = Number(snap.val());
         const display = document.getElementById('current-clicks-needed-display');
         if (display) display.innerText = '🖱️ كل ' + GLOBAL_CLICKS_NEEDED + ' ضغطات افتراضياً';
     });
@@ -375,7 +382,7 @@ function updateDefaultSettings() {
     const priceInput = document.getElementById('admin-base-price');
     const clicksInput = document.getElementById('admin-clicks-needed');
     const newPrice = parseFloat(priceInput.value);
-    const newClicks = parseInt(clicksInput.value);
+    const newClicks = parseInt(clicksInput.value, 10);
     
     if (!newPrice || newPrice <= 0) return showNotification("يرجى إدخال سعر صحيح", "blue");
     if (!newClicks || newClicks < 1) return showNotification("يرجى إدخال عدد ضغطات صحيح", "blue");
@@ -415,6 +422,7 @@ function setFilter(filterType, btnElement) {
 // ========== عرض وترتيب وفلترة المروجين في لوحة الأدمن ==========
 function renderUsersList() {
     const container = document.getElementById('admin-users-list');
+    if (!container) return;
     if (!allUsersData || Object.keys(allUsersData).length === 0) {
         container.innerHTML = '<p class="text-[10px] text-slate-500 text-center py-8">لا يوجد مستخدمين بعد</p>';
         return;
@@ -459,86 +467,94 @@ function renderUsersList() {
         const shortUID = user.shortUID || '-----';
         const userName = user.username || 'مستخدم';
         const joinDate = user.joinDate || 'غير متوفر';
-        const userPrice = user.customPrice !== undefined ? user.customPrice : GLOBAL_BASE_PRICE;
-        const userClicks = user.customClicksNeeded !== undefined ? user.customClicksNeeded : GLOBAL_CLICKS_NEEDED;
-        const userCustomLink = user.customLink || '';
-        const hasCustom = user.customPrice !== undefined || user.customClicksNeeded !== undefined || Boolean(userCustomLink);
+        const userPrice = user.customPrice !== undefined && user.customPrice !== null ? user.customPrice : GLOBAL_BASE_PRICE;
+        const userClicks = user.customClicksNeeded !== undefined && user.customClicksNeeded !== null ? user.customClicksNeeded : GLOBAL_CLICKS_NEEDED;
+        const customLink = user.customRedirectLink || '';
+        const hasCustomLink = isValidUrl(customLink);
+        const hasCustom = (user.customPrice !== undefined && user.customPrice !== null) ||
+                          (user.customClicksNeeded !== undefined && user.customClicksNeeded !== null) ||
+                          hasCustomLink;
         const isTop = index === 0 && (user.totalBalance || 0) > 0 && currentFilter === 'all';
         
         html += `
-        <div class="user-row glass-card p-3 rounded-2xl border ${isTop ? 'border-amber-500/60 bg-amber-500/5' : hasCustom ? 'border-purple-500/50' : 'border-white/5'}">
-            <div class="grid grid-cols-2 md:grid-cols-12 gap-2 items-center">
-                <div class="md:col-span-2 text-center md:text-right">
+        <div class="user-row glass-card p-3 rounded-2xl border ${isTop ? 'border-amber-500/60 bg-amber-500/5' : hasCustomLink ? 'border-emerald-500/50 bg-emerald-500/5' : hasCustom ? 'border-purple-500/50' : 'border-white/5'}">
+            <div class="grid grid-cols-2 lg:grid-cols-12 gap-2 items-center">
+                <div class="lg:col-span-2 text-center lg:text-right">
                     <span class="uid-badge-small">#${shortUID}</span>
                     <p class="text-[8px] text-slate-400 mt-1">📅 ${joinDate}</p>
                 </div>
-                <div class="md:col-span-2 text-center md:text-right">
-                    <p class="text-[11px] font-bold text-white truncate flex items-center justify-center md:justify-start gap-1">
-                        ${isTop ? '👑 ' : ''}${userName}
+                <div class="lg:col-span-2 text-center lg:text-right">
+                    <p class="text-[11px] font-bold text-white truncate flex items-center justify-center lg:justify-start gap-1">
+                        ${isTop ? '👑 ' : ''}${escapeAttr(userName)}
                     </p>
-                    <p class="text-[8px] text-slate-500 truncate">${user.email||''}</p>
+                    <p class="text-[8px] text-slate-500 truncate">${escapeAttr(user.email || '')}</p>
                 </div>
-                <div class="md:col-span-2">
+                <div class="lg:col-span-1">
                     <input type="number" id="price_${uid}" value="${userPrice}" step="0.001" min="0.001" class="admin-input-sm" placeholder="السعر">
                 </div>
-                <div class="md:col-span-2">
+                <div class="lg:col-span-1">
                     <input type="number" id="clicks_${uid}" value="${userClicks}" step="1" min="1" class="admin-input-sm" placeholder="الضغطات">
                 </div>
-                <div class="md:col-span-2 text-center">
-                    <p class="text-[9px] text-slate-300 font-bold">${user.clicks||0} عملية (${(user.totalBalance||0).toFixed(2)}$)</p>
-                    <p class="text-[8px] text-amber-400 font-bold">💸 مسحوبات مدفوعة: $${user.totalWithdrawn.toFixed(2)}</p>
+                <div class="col-span-2 lg:col-span-3">
+                    <input type="url" id="link_${uid}" value="${escapeAttr(customLink)}" dir="ltr" class="admin-input-sm text-left" placeholder="رابط مخصص (فارغ = افتراضي)">
                 </div>
-                <div class="md:col-span-2 flex gap-1 justify-center">
-                    <button onclick="saveUserSettings('${uid}')" class="bg-purple-600 text-white px-2 py-2 rounded-xl text-[10px] font-black hover:bg-purple-500 transition" title="حفظ التعديلات">💾</button>
-                    ${hasCustom ? `<button onclick="resetUserSettings('${uid}')" class="bg-amber-500/30 text-amber-400 px-2 py-2 rounded-xl text-[9px] font-black hover:bg-amber-500/50 transition" title="إعادة للافتراضي">↩️</button>` : ''}
-                    <button onclick="deleteUserAccount('${uid}', '${userName}')" class="bg-red-500/30 text-red-400 px-2 py-2 rounded-xl text-[10px] font-black hover:bg-red-500/60 transition" title="حذف الحساب">🗑️</button>
+                <div class="lg:col-span-1 text-center">
+                    <p class="text-[9px] text-slate-300 font-bold">${user.clicks || 0} عملية</p>
+                    <p class="text-[9px] text-emerald-400 font-bold">$${(user.totalBalance || 0).toFixed(2)}</p>
+                    <p class="text-[8px] text-amber-400 font-bold">💸 $${user.totalWithdrawn.toFixed(2)}</p>
+                </div>
+                <div class="col-span-2 lg:col-span-2 flex gap-1 justify-center">
+                    <button onclick="saveUserSettings('${uid}')" class="bg-purple-600 text-white px-2.5 py-2 rounded-xl text-[10px] font-black hover:bg-purple-500 transition" title="حفظ التعديلات">💾</button>
+                    ${hasCustom ? `<button onclick="resetUserSettings('${uid}')" class="bg-amber-500/30 text-amber-400 px-2.5 py-2 rounded-xl text-[9px] font-black hover:bg-amber-500/50 transition" title="إعادة للافتراضي">↩️</button>` : ''}
+                    <button onclick="deleteUserAccount('${uid}', '${escapeAttr(userName)}')" class="bg-red-500/30 text-red-400 px-2.5 py-2 rounded-xl text-[10px] font-black hover:bg-red-500/60 transition" title="حذف الحساب">🗑️</button>
                 </div>
             </div>
-            <div class="mt-2">
-                <input type="url" id="link_${uid}" value="${userCustomLink}" dir="ltr" class="admin-input-sm" placeholder="🔗 رابط تحويل مخصص لهذا المروج (فارغ = الرابط العام)">
+            <div class="mt-2 flex flex-wrap items-center justify-center gap-2 text-[8px] font-bold">
+                ${isTop ? '<span class="text-amber-400">🔥 المروج النشط والأعلى ربحاً</span>' : ''}
+                ${hasCustomLink
+                    ? `<span class="text-emerald-400 break-all">🔗 رابط مخصص نشط: ${escapeAttr(customLink)}</span>`
+                    : `<span class="text-slate-500">🔗 يستخدم الرابط الافتراضي</span>`}
             </div>
-            ${isTop ? '<p class="text-[8px] text-amber-400 mt-2 text-center font-bold">🔥 المروج النشط والأعلى ربحاً (متصدر القائمة)</p>' : hasCustom ? '<p class="text-[8px] text-purple-400 mt-2 text-center font-bold">⚡ إعدادات مخصصة</p>' : ''}
         </div>`;
     });
     
     container.innerHTML = html;
 }
 
-// ========== حفظ إعدادات مستخدم محدد ==========
 function saveUserSettings(uid) {
     const priceInput = document.getElementById('price_' + uid);
     const clicksInput = document.getElementById('clicks_' + uid);
     const linkInput = document.getElementById('link_' + uid);
     
     const price = parseFloat(priceInput.value);
-    const clicks = parseInt(clicksInput.value);
-    const customLink = linkInput ? linkInput.value.trim() : "";
+    const clicks = parseInt(clicksInput.value, 10);
+    const customLink = linkInput ? linkInput.value.trim() : '';
     
     if (!price || price <= 0) return showNotification("يرجى إدخال سعر صحيح للمستخدم", "blue");
     if (!clicks || clicks < 1) return showNotification("يرجى إدخال عدد ضغطات صحيح للمستخدم", "blue");
-    if (customLink && !/^https?:\/\//i.test(customLink)) return showNotification("يرجى إدخال رابط يبدأ بـ http أو https", "blue");
+    if (customLink && !isValidUrl(customLink)) {
+        return showNotification("الرابط المخصص يجب أن يبدأ بـ http:// أو https:// أو يُترك فارغاً", "blue");
+    }
     
     db.ref('users/' + uid).update({
         customPrice: price,
         customClicksNeeded: clicks,
-        customLink: customLink || null
+        customRedirectLink: customLink || null
     }).then(() => {
-        showNotification("تم حفظ إعدادات المروج ✅", "green");
+        showNotification(customLink ? "تم حفظ إعدادات المروج والرابط المخصص ✅" : "تم حفظ إعدادات المروج ✅", "green");
     });
 }
 
-// ========== إعادة تعيين إعدادات مستخدم للافتراضي ==========
 function resetUserSettings(uid) {
     db.ref('users/' + uid).update({
         customPrice: null,
         customClicksNeeded: null,
-        customLink: null
+        customRedirectLink: null
     }).then(() => {
-        showNotification("تم إعادة المروج للإعدادات الافتراضية ✅", "green");
+        showNotification("تم إعادة المروج للإعدادات والرابط الافتراضي ✅", "green");
     });
 }
 
-// ========== زر حذف حساب المروج نهائياً ==========
 function deleteUserAccount(uid, name) {
     if (confirm(`هل أنت متأكد من رغبتك في حذف حساب المروج "${name}" نهائياً من قاعدة البيانات؟`)) {
         const updates = {};
@@ -555,18 +571,18 @@ function deleteUserAccount(uid, name) {
     }
 }
 
-// ========== الحصول على إعدادات المستخدم (السعر، الضغطات، الرابط المخصص) ==========
 function getUserSettings(uid, callback) {
     db.ref('users/' + uid).once('value', snap => {
         const user = snap.val();
         if (user) {
+            const targetLink = isValidUrl(user.customRedirectLink) ? user.customRedirectLink.trim() : GLOBAL_REDIRECT_LINK;
             callback(
-                user.customPrice !== undefined ? user.customPrice : GLOBAL_BASE_PRICE,
-                user.customClicksNeeded !== undefined ? user.customClicksNeeded : GLOBAL_CLICKS_NEEDED,
-                user.customLink || ""
+                user.customPrice !== undefined && user.customPrice !== null ? Number(user.customPrice) : GLOBAL_BASE_PRICE,
+                user.customClicksNeeded !== undefined && user.customClicksNeeded !== null ? Number(user.customClicksNeeded) : GLOBAL_CLICKS_NEEDED,
+                targetLink
             );
         } else {
-            callback(GLOBAL_BASE_PRICE, GLOBAL_CLICKS_NEEDED, "");
+            callback(GLOBAL_BASE_PRICE, GLOBAL_CLICKS_NEEDED, GLOBAL_REDIRECT_LINK);
         }
     });
 }
@@ -592,7 +608,7 @@ function goToDashboard(){document.getElementById('withdraw-page').classList.add(
 
 function updateWithdrawPage(){const u=auth.currentUser;if(!u)return;db.ref('users/'+u.uid).once('value',snap=>{const d=snap.val();if(d){document.getElementById('withdraw-balance').innerText='$'+(d.withdrawableBalance||0).toFixed(2);}});}
 
-function loadWithdrawHistory(){const u=auth.currentUser;if(!u)return;db.ref('withdrawals').once('value',snap=>{const data=snap.val();const container=document.getElementById('withdraw-history-table');if(!data){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===u.uid);if(withdrawals.length===0){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}let html='<div class="overflow-x-auto"><table class="w-full text-[10px] text-right border-collapse"><thead><tr class="text-slate-400 border-b border-white/10"><th class="p-2">التاريخ</th><th class="p-2">المبلغ</th><th class="p-2">الطريقة</th><th class="p-2">الرسالة</th><th class="p-2">الحالة</th></tr></thead><tbody>';withdrawals.forEach(w=>{const date=new Date(w.timestamp).toLocaleDateString('ar-IQ');const sc=w.status==='paid'?'text-emerald-400':w.status==='rejected'?'text-red-400':'text-amber-400';const st=w.status==='paid'?'✅ تم الدفع':w.status==='rejected'?'❌ مرفوض':'⏳ قيد المراجعة';html+=`<tr class="border-b border-white/5 hover:bg-white/5"><td class="p-2 font-bold text-white">${date}</td><td class="p-2 text-emerald-400 font-black">$${w.amount}</td><td class="p-2 text-blue-400 font-bold">${w.method}</td><td class="p-2 text-slate-200">${w.note||'-'}</td><td class="p-2 font-black ${sc}">${st}</td></tr>`;});html+='</tbody></table></div>';container.innerHTML=html;});}
+function loadWithdrawHistory(){const u=auth.currentUser;if(!u)return;db.ref('withdrawals').once('value',snap=>{const data=snap.val();const container=document.getElementById('withdraw-history-table');if(!data){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===u.uid);if(withdrawals.length===0){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}let html='<div class="overflow-x-auto"><table class="w-full text-[10px] text-right border-collapse"><thead><tr class="text-slate-400 border-b border-white/10"><th class="p-2">التاريخ</th><th class="p-2">المبلغ</th><th class="p-2">الطريقة</th><th class="p-2">التواصل</th><th class="p-2">الحالة</th></tr></thead><tbody>';withdrawals.forEach(w=>{const date=new Date(w.timestamp).toLocaleDateString('ar-IQ');const sc=w.status==='paid'?'text-emerald-400':'text-amber-400';const st=w.status==='paid'?'✅ تم الدفع':'⏳ قيد المراجعة';html+=`<tr class="border-b border-white/5 hover:bg-white/5"><td class="p-2 font-bold text-white">${date}</td><td class="p-2 text-emerald-400 font-black">$${w.amount}</td><td class="p-2 text-blue-400 font-bold">${w.method}</td><td class="p-2 text-purple-400 font-bold">${escapeAttr(w.contact || '-')}</td><td class="p-2 font-black ${sc}">${st}</td></tr>`;});html+='</tbody></table></div>';container.innerHTML=html;});}
 
 function signInWithGoogle(){
     const provider=new firebase.auth.GoogleAuthProvider();
@@ -679,90 +695,114 @@ function toggleBanner(){db.ref('settings/banner/visible').once('value',snap=>{co
 let secretTapCount=0,secretTapTimer=null;
 function handleSecretTap(){secretTapCount++;const ind=document.getElementById('secret-indicator');ind.classList.remove('hidden');ind.innerText=`🔒 ${secretTapCount}/7`;clearTimeout(secretTapTimer);secretTapTimer=setTimeout(()=>{secretTapCount=0;ind.classList.add('hidden');},3000);if(secretTapCount===7){secretTapCount=0;ind.classList.add('hidden');const u=auth.currentUser;if(u&&ADMIN_EMAILS.includes(u.email)){const p=document.getElementById('admin-panel');p.classList.toggle('hidden');if(!p.classList.contains('hidden')){loadAdminPanel();initAdminDataListeners();showNotification('🔓 تم فتح لوحة التحكم السرية','purple');}else{showNotification('🔒 تم إغلاق لوحة التحكم','blue');}}else{showNotification('⛔ ليس لديك صلاحية الوصول','blue');}}}
 
-let GLOBAL_REDIRECT_LINK="https://hp.funroom.store/a/8nw6emt2";
-db.ref('settings/redirectLink').on('value',snap=>{if(snap.val()){GLOBAL_REDIRECT_LINK=snap.val();const d=document.getElementById('current-link-display');if(d)d.innerText="الرابط النشط: "+GLOBAL_REDIRECT_LINK;}});
-function updateGlobalLink(){const l=document.getElementById('admin-new-link').value.trim();if(!l.startsWith('http'))return showNotification("يرجى إدخال رابط صحيح يبدأ بـ http","blue");db.ref('settings').update({redirectLink:l}).then(()=>{showNotification("تم تحديث رابط التحويل بنجاح ✅","green");document.getElementById('admin-new-link').value="";});}
+db.ref('settings/redirectLink').on('value',snap=>{if(snap.val()){GLOBAL_REDIRECT_LINK=snap.val();const d=document.getElementById('current-link-display');if(d)d.innerText="الرابط الافتراضي النشط: "+GLOBAL_REDIRECT_LINK;}});
+function updateGlobalLink(){const l=document.getElementById('admin-new-link').value.trim();if(!isValidUrl(l))return showNotification("يرجى إدخال رابط صحيح يبدأ بـ http","blue");db.ref('settings').update({redirectLink:l}).then(()=>{showNotification("تم تحديث رابط التحويل الافتراضي بنجاح ✅","green");document.getElementById('admin-new-link').value="";});}
+
+function resolveUserRedirect(refId, fallbackFn) {
+    if (!refId) return fallbackFn(GLOBAL_REDIRECT_LINK);
+    db.ref('users/' + refId + '/customRedirectLink').once('value').then(snap => {
+        const customUrl = snap.val();
+        fallbackFn(isValidUrl(customUrl) ? customUrl.trim() : GLOBAL_REDIRECT_LINK);
+    }).catch(() => fallbackFn(GLOBAL_REDIRECT_LINK));
+}
 
 function checkAndRedirect(){
     const p=new URLSearchParams(window.location.search);
     const refId=p.get("ref");
     if(!refId)return;
-    const fp=getDeviceFingerprint();
-    document.getElementById('loading-screen').classList.remove('hidden');
-
-    getUserSettings(refId, (userPrice, userClicksNeeded, userCustomLink) => {
-        const targetLink = (userCustomLink && /^https?:\/\//i.test(userCustomLink)) ? userCustomLink : GLOBAL_REDIRECT_LINK;
-        if(sessionStorage.getItem('redirecting')){
-            window.location.replace(targetLink);
-            return;
-        }
+    if(!sessionStorage.getItem('redirecting')){
         sessionStorage.setItem('redirecting','true');
-
+        document.getElementById('loading-screen').classList.remove('hidden');
+        const fp=getDeviceFingerprint();
         fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(data=>{
             const ip=data.ip;
             const uk=ip+'_'+fp;
-            db.ref('clicks_log/'+refId).once('value').then(snap=>{
-                const log=snap.val()||{};
-                if(Object.values(log).some(e=>e===uk)){window.location.replace(targetLink);return;}
-                const currentUniqueIPs=new Set();
-                Object.values(log).forEach(entry=>{const ipPart=entry.split('_')[0];currentUniqueIPs.add(ipPart);});
-                const currentUniqueCount=currentUniqueIPs.size;
-                currentUniqueIPs.add(ip);
-                const newUniqueCount=currentUniqueIPs.size;
-                
-                const currentGroups=Math.floor(currentUniqueCount/userClicksNeeded);
-                const newGroups=Math.floor(newUniqueCount/userClicksNeeded);
-                const shouldCountEarning=(newGroups>currentGroups);
-                
-                db.ref('clicks_log/'+refId).push(uk);
-                db.ref('users/'+refId).once('value').then(us=>{
-                    const ud=us.val()||{};
-                    const com = userPrice;
-                    const today=new Date().toISOString().split('T')[0];
-                    const updates={};
-                    updates['users/'+refId+'/clicks']=(ud.clicks||0)+1;
-                    updates['users/'+refId+'/todayClicks']=(ud.todayClicks||0)+1;
-                    updates['daily_log/'+refId+'/'+today+'/clicks']=firebase.database.ServerValue.increment(1);
-                    if(shouldCountEarning){
-                        updates['users/'+refId+'/todayBalance']=firebase.database.ServerValue.increment(com);
-                        updates['users/'+refId+'/totalBalance']=firebase.database.ServerValue.increment(com);
-                        updates['daily_log/'+refId+'/'+today+'/earnings']=firebase.database.ServerValue.increment(com);
-                        updates['daily_log/'+refId+'/'+today+'/clickRate']=com;
-                        if(ud.referredBy){
-                            const refCommission=Number((com*0.1).toFixed(3));
-                            updates['users/'+ud.referredBy+'/refEarnings']=firebase.database.ServerValue.increment(refCommission);
-                            updates['users/'+ud.referredBy+'/todayBalance']=firebase.database.ServerValue.increment(refCommission);
-                            updates['users/'+ud.referredBy+'/totalBalance']=firebase.database.ServerValue.increment(refCommission);
-                            updates['daily_log/'+ud.referredBy+'/'+today+'/refEarnings']=firebase.database.ServerValue.increment(refCommission);
+            getUserSettings(refId, (userPrice, userClicksNeeded, targetLink) => {
+                db.ref('clicks_log/'+refId).once('value').then(snap=>{
+                    const log=snap.val()||{};
+                    if(Object.values(log).some(e=>e===uk)){window.location.replace(targetLink);return;}
+                    const currentUniqueIPs=new Set();
+                    Object.values(log).forEach(entry=>{const ipPart=entry.split('_')[0];currentUniqueIPs.add(ipPart);});
+                    const currentUniqueCount=currentUniqueIPs.size;
+                    currentUniqueIPs.add(ip);
+                    const newUniqueCount=currentUniqueIPs.size;
+                    
+                    const currentGroups=Math.floor(currentUniqueCount/userClicksNeeded);
+                    const newGroups=Math.floor(newUniqueCount/userClicksNeeded);
+                    const shouldCountEarning=(newGroups>currentGroups);
+                    
+                    db.ref('clicks_log/'+refId).push(uk);
+                    db.ref('users/'+refId).once('value').then(us=>{
+                        const ud=us.val()||{};
+                        const com = userPrice;
+                        const today=new Date().toISOString().split('T')[0];
+                        const updates={};
+                        updates['users/'+refId+'/clicks']=(ud.clicks||0)+1;
+                        updates['users/'+refId+'/todayClicks']=(ud.todayClicks||0)+1;
+                        updates['daily_log/'+refId+'/'+today+'/clicks']=firebase.database.ServerValue.increment(1);
+                        if(shouldCountEarning){
+                            updates['users/'+refId+'/todayBalance']=firebase.database.ServerValue.increment(com);
+                            updates['users/'+refId+'/totalBalance']=firebase.database.ServerValue.increment(com);
+                            updates['daily_log/'+refId+'/'+today+'/earnings']=firebase.database.ServerValue.increment(com);
+                            updates['daily_log/'+refId+'/'+today+'/clickRate']=com;
+                            if(ud.referredBy){
+                                const refCommission=Number((com*0.1).toFixed(3));
+                                updates['users/'+ud.referredBy+'/refEarnings']=firebase.database.ServerValue.increment(refCommission);
+                                updates['users/'+ud.referredBy+'/todayBalance']=firebase.database.ServerValue.increment(refCommission);
+                                updates['users/'+ud.referredBy+'/totalBalance']=firebase.database.ServerValue.increment(refCommission);
+                                updates['daily_log/'+ud.referredBy+'/'+today+'/refEarnings']=firebase.database.ServerValue.increment(refCommission);
+                            }
                         }
-                    }
-                    db.ref().update(updates);
-                    window.location.replace(targetLink);
+                        db.ref().update(updates).finally(()=>{window.location.replace(targetLink);});
+                    }).catch(()=>{window.location.replace(targetLink);});
                 }).catch(()=>{window.location.replace(targetLink);});
-            }).catch(()=>{window.location.replace(targetLink);});
-        }).catch(()=>{const uk='nofetch_'+fp;db.ref('clicks_log/'+refId).push(uk);window.location.replace(targetLink);});
-    });
+            });
+        }).catch(()=>{
+            resolveUserRedirect(refId, targetLink => {
+                const uk='nofetch_'+fp;
+                db.ref('clicks_log/'+refId).push(uk).finally(()=>{window.location.replace(targetLink);});
+            });
+        });
+    }else{
+        resolveUserRedirect(refId, targetLink => {
+            window.location.replace(targetLink);
+        });
+    }
 }
 
-function checkDailyReset(uid){
-    const now=new Date();
-    let resetTime=new Date();
-    resetTime.setHours(3,0,0,0);
-    if(now.getHours()<3)resetTime.setDate(resetTime.getDate()-1);
-    const currentResetDay=resetTime.toDateString();
-    db.ref('users/'+uid).once('value').then(snapshot=>{
-        const freshData=snapshot.val();
-        if(!freshData)return;
-        const lastResetDay=freshData.lastResetDay||"";
-        if(lastResetDay!==currentResetDay){
-            const todayAmount=freshData.todayBalance||0;
-            db.ref('users/'+uid).update({
-                todayBalance:0,
-                todayClicks:0,
-                withdrawableBalance:Number(((freshData.withdrawableBalance||0)+todayAmount).toFixed(2)),
-                lastResetDay:currentResetDay
-            });
+// ========== إصلاح تسريب الأرباح اليومية عند التصفير ==========
+function getResetCycleKey() {
+    const now = new Date();
+    const cycleDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 0, 0, 0);
+    if (now.getHours() < 3) {
+        cycleDate.setDate(cycleDate.getDate() - 1);
+    }
+    const y = cycleDate.getFullYear();
+    const m = String(cycleDate.getMonth() + 1).padStart(2, '0');
+    const d = String(cycleDate.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function checkDailyReset(uid) {
+    const currentResetDay = getResetCycleKey();
+    const sessionKey = `${uid}_${currentResetDay}`;
+    if (dailyResetCheckedSessions.has(sessionKey)) return;
+    dailyResetCheckedSessions.add(sessionKey);
+
+    db.ref('users/' + uid).transaction(currentData => {
+        if (!currentData) return currentData;
+        if (currentData.lastResetDay === currentResetDay) {
+            return currentData;
         }
+        const todayAmount = Number(currentData.todayBalance || 0);
+        const currentWithdrawable = Number(currentData.withdrawableBalance || 0);
+        return {
+            ...currentData,
+            todayBalance: 0,
+            todayClicks: 0,
+            withdrawableBalance: Number((currentWithdrawable + todayAmount).toFixed(4)),
+            lastResetDay: currentResetDay
+        };
     });
 }
 
@@ -808,119 +848,12 @@ auth.onAuthStateChanged(u=>{if(u){document.getElementById('auth-section').classL
     }
 });
 
-function renderHistory(uid){
-    db.ref('withdrawals').on('value',snap=>{
-        const list=document.getElementById('user-withdraw-history'),data=snap.val();
-        list.innerHTML="";
-        if(!data)return;
-        const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===uid);
-        if(withdrawals.length===0){
-            list.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';
-            return;
-        }
-        withdrawals.slice(0,5).forEach(w=>{
-            const isPaid = w.status === "paid";
-            const isRejected = w.status === "rejected";
-            const statusClass = isPaid ? 'text-emerald-400' : isRejected ? 'text-red-400' : 'text-amber-400';
-            const statusLabel = isPaid ? 'تم الدفع ✅' : isRejected ? 'مرفوض ❌' : 'قيد المراجعة';
-            list.innerHTML+=`
-            <div class="glass-card p-4 rounded-2xl border border-white/5 text-right">
-                <div class="flex justify-between items-center">
-                    <p class="text-lg text-white font-black">$${w.amount}</p>
-                    <div class="text-[10px] font-black ${statusClass}">${statusLabel}</div>
-                </div>
-                <p class="text-[9px] text-slate-500 font-bold italic lowercase">${w.method} | ${w.contact||'-'}</p>
-                ${w.note ? `<p class="text-[10px] text-slate-200 mt-2 bg-slate-950 p-2 rounded-xl">💬 رسالة الإدارة: ${w.note}</p>` : ''}
-            </div>`;
-        });
-    });
-}
+function renderHistory(uid){db.ref('withdrawals').on('value',snap=>{const list=document.getElementById('user-withdraw-history'),data=snap.val();list.innerHTML="";if(!data)return;const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===uid);if(withdrawals.length===0){list.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';return;}withdrawals.slice(0,5).forEach(w=>{const paid=w.status==="paid";list.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border border-white/5"><div class="text-right"><p class="text-lg text-white font-black">$${w.amount}</p><p class="text-[9px] text-slate-500 font-bold italic lowercase">${escapeAttr(w.method)} | ${escapeAttr(w.contact||'-')}</p></div><div class="text-[10px] font-black ${paid?'text-emerald-400':'text-amber-400'}">${paid?'تم الدفع ✅':'قيد المراجعة'}</div></div>`;});});}
 
-function confirmWithdraw(){const amt=parseFloat(document.getElementById('w-amount').value);const acc=document.getElementById('w-account').value.trim();const con=document.getElementById('w-contact').value.trim();const met=selectedPaymentMethod;const contactMethod=selectedContactMethod;const fullContact=contactMethod+': '+con;if(!amt||amt<10)return showNotification("الحد الأدنى للسحب 10$","blue");if(!acc)return showNotification("يرجى إدخال رقم الحساب أو المحفظة","blue");if(!con)return showNotification("يرجى إدخال معلومات التواصل","blue");const uRef=db.ref('users/'+auth.currentUser.uid);uRef.once('value',snap=>{const bal=snap.val().withdrawableBalance||0;if(amt>bal)return showNotification("رصيدك غير كافٍ","blue");uRef.update({withdrawableBalance:Number((bal-amt).toFixed(2))});db.ref('withdrawals').push({uid:auth.currentUser.uid,username:snap.val().username,amount:amt,method:met,account:acc,contact:fullContact,status:"pending",note:"",timestamp:Date.now()}).then(()=>{document.getElementById('withdraw-modal').classList.remove('hidden');document.getElementById('w-amount').value="";document.getElementById('w-account').value="";document.getElementById('w-contact').value="";updateWithdrawPage();loadWithdrawHistory();});});}
+function confirmWithdraw(){const amt=parseFloat(document.getElementById('w-amount').value);const acc=document.getElementById('w-account').value.trim();const con=document.getElementById('w-contact').value.trim();const met=selectedPaymentMethod;const contactMethod=selectedContactMethod;const fullContact=contactMethod+': '+con;if(!amt||amt<10)return showNotification("الحد الأدنى للسحب 10$","blue");if(!acc)return showNotification("يرجى إدخال رقم الحساب أو المحفظة","blue");if(!con)return showNotification("يرجى إدخال معلومات التواصل","blue");const uRef=db.ref('users/'+auth.currentUser.uid);uRef.once('value',snap=>{const bal=snap.val().withdrawableBalance||0;if(amt>bal)return showNotification("رصيدك غير كافٍ","blue");uRef.update({withdrawableBalance:Number((bal-amt).toFixed(2))});db.ref('withdrawals').push({uid:auth.currentUser.uid,username:snap.val().username,amount:amt,method:met,account:acc,contact:fullContact,status:"pending",timestamp:Date.now()}).then(()=>{document.getElementById('withdraw-modal').classList.remove('hidden');document.getElementById('w-amount').value="";document.getElementById('w-account').value="";document.getElementById('w-contact').value="";updateWithdrawPage();loadWithdrawHistory();});});}
 
-function loadAdminPanel(){
-    db.ref('users').on('value',snap=>{
-        const users=snap.val()||{};
-        let tc=0,au=0,te={name:'-',total:0};
-        Object.values(users).forEach(u=>{tc+=u.clicks||0;if(u.clicks>0)au++;if((u.totalBalance||0)>te.total){te={name:u.username,total:u.totalBalance};}});
-        document.getElementById('admin-total-clicks').innerText=tc;
-        document.getElementById('admin-active-users').innerText=au;
-        document.getElementById('admin-top-earner').innerText=te.name+' ($'+te.total.toFixed(2)+')';
-    });
-    db.ref('withdrawals').on('value',snap=>{
-        const cont=document.getElementById('admin-withdrawals');
-        cont.innerHTML="";
-        const data=snap.val()||{};
-        const pendingItems = Object.keys(data).reverse().filter(key => data[key].status === "pending");
-        document.getElementById('admin-pending-count').innerText = pendingItems.length;
-        pendingItems.forEach(key=>{
-            const w=data[key];
-            cont.innerHTML+=`
-            <div class="glass-card p-4 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-r-4 border-amber-500">
-                <div class="text-right">
-                    <h4 class="font-black text-white">${w.username}</h4>
-                    <p class="text-xs text-amber-400 font-bold">$${w.amount}</p>
-                    <p class="text-[10px] text-slate-400 uppercase">${w.method} - ${w.account} | ${w.contact||'-'}</p>
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <button onclick="openReviewModal('${key}', 'pay')" class="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">إتمام + رسالة</button>
-                    <button onclick="openReviewModal('${key}', 'reject')" class="bg-red-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">رفض</button>
-                </div>
-            </div>`;
-        });
-    });
-}
-
-function openReviewModal(id, action) {
-    const w = allWithdrawalsData[id];
-    if (!w) return;
-    pendingReview = { id, action, w };
-    const isPay = action === 'pay';
-    document.getElementById('review-title').innerText = isPay ? '✅ إتمام الدفع وإرسال رسالة' : '❌ رفض طلب السحب وإرجاع الرصيد';
-    document.getElementById('review-title').className = 'text-xl font-black mb-2 ' + (isPay ? 'text-emerald-400' : 'text-red-400');
-    document.getElementById('review-sub').innerText = `${w.username} — $${w.amount} (${w.method})`;
-    document.getElementById('review-note').value = "";
-    document.getElementById('review-note').placeholder = isPay ? "رسالة الدفع للمروج (اختياري)..." : "سبب الرفض (اختياري، يظهر للمروج)...";
-    const btn = document.getElementById('review-confirm-btn');
-    btn.innerText = isPay ? 'تأكيد الدفع' : 'تأكيد الرفض';
-    btn.className = 'py-3 rounded-2xl font-black text-white ' + (isPay ? 'bg-emerald-500' : 'bg-red-500');
-    document.getElementById('review-modal').classList.remove('hidden');
-}
-
-function closeReviewModal() {
-    pendingReview = null;
-    document.getElementById('review-modal').classList.add('hidden');
-}
-
-function submitReviewAction() {
-    if (!pendingReview) return;
-    const { id, action, w } = pendingReview;
-    const note = document.getElementById('review-note').value.trim();
-
-    if (action === 'pay') {
-        db.ref('withdrawals/' + id).update({
-            status: "paid",
-            note: note || "تم تحويل المبلغ بنجاح",
-            processedAt: Date.now()
-        }).then(() => {
-            showNotification("تم إتمام الدفع وإرسال الرسالة ✅", "green");
-            closeReviewModal();
-        });
-    } else {
-        const refundAmount = Number(w.amount) || 0;
-        const userRef = db.ref('users/' + w.uid + '/withdrawableBalance');
-        userRef.transaction(bal => Number(((bal || 0) + refundAmount).toFixed(2))).then(() => {
-            return db.ref('withdrawals/' + id).update({
-                status: "rejected",
-                note: note || "تم رفض الطلب وإعادة المبلغ للرصيد",
-                processedAt: Date.now()
-            });
-        }).then(() => {
-            showNotification("تم رفض الطلب وإعادة الرصيد للمروج ❌", "blue");
-            closeReviewModal();
-        });
-    }
-}
+function loadAdminPanel(){db.ref('users').on('value',snap=>{const users=snap.val()||{};let tc=0,au=0,te={name:'-',total:0},pc=0;Object.values(users).forEach(u=>{tc+=u.clicks||0;if(u.clicks>0)au++;if((u.totalBalance||0)>te.total){te={name:u.username,total:u.totalBalance};}});document.getElementById('admin-total-clicks').innerText=tc;document.getElementById('admin-active-users').innerText=au;document.getElementById('admin-top-earner').innerText=te.name+' ($'+te.total.toFixed(2)+')';db.ref('withdrawals').on('value',ws=>{const wd=ws.val()||{};pc=Object.values(wd).filter(w=>w.status==='pending').length;document.getElementById('admin-pending-count').innerText=pc;});});db.ref('withdrawals').on('value',snap=>{const cont=document.getElementById('admin-withdrawals');cont.innerHTML="";const data=snap.val();if(!data)return;Object.keys(data).reverse().forEach(key=>{const w=data[key];if(w.status==="paid")return;cont.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border-r-4 border-amber-500"><div class="text-right"><h4 class="font-black text-white">${escapeAttr(w.username)}</h4><p class="text-xs text-amber-400 font-bold">$${w.amount}</p><p class="text-[10px] text-slate-500 uppercase">${escapeAttr(w.method)} - ${escapeAttr(w.account)} | ${escapeAttr(w.contact||'-')}</p></div><button onclick="markAsPaid('${key}')" class="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">إتمام</button></div>`;});});}
+function markAsPaid(id){db.ref('withdrawals/'+id).update({status:"paid"});}
 
 function copyToClipboard(elementId, successMessage, type = "blue") {
     const inputElement = document.getElementById(elementId);
@@ -944,10 +877,9 @@ function copyToClipboard(elementId, successMessage, type = "blue") {
 function copyShortLink(){ copyToClipboard("short-link", "تم نسخ الرابط التسويقي ✅", "blue"); }
 function copyReferralLink(){ copyToClipboard("ref-link", "تم نسخ رابط الإحالة ✅", "purple"); }
 
-function logout(){auth.signOut();document.getElementById('admin-panel').classList.add('hidden');document.getElementById('withdraw-page').classList.add('hidden');closeReviewModal();secretTapCount=0;stopFakeNotifications();}
+function logout(){auth.signOut();document.getElementById('admin-panel').classList.add('hidden');document.getElementById('withdraw-page').classList.add('hidden');secretTapCount=0;stopFakeNotifications();}
 
 checkAndRedirect();
 </script>
 </body>
 </html>
-
