@@ -397,7 +397,7 @@ function updateDefaultSettings() {
         showNotification("تم حفظ الإعدادات الافتراضية ✅", "green");
         priceInput.value = "";
         clicksInput.value = "";
-    });
+    }).catch(err => showNotification("تعذر الحفظ: " + err.message, "blue"));
 }
 
 // ========== الاستماع المباشر لبيانات المستخدمين والسحوبات للفلترة ==========
@@ -405,10 +405,14 @@ function initAdminDataListeners() {
     db.ref('users').on('value', snap => {
         allUsersData = snap.val() || {};
         renderUsersList();
+    }, err => {
+        showNotification("خطأ بقراءة المستخدمين: " + err.message, "blue");
     });
     db.ref('withdrawals').on('value', snap => {
         allWithdrawalsData = snap.val() || {};
         renderUsersList();
+    }, err => {
+        showNotification("خطأ بقراءة السحوبات: " + err.message, "blue");
     });
 }
 
@@ -431,7 +435,7 @@ function renderUsersList() {
     const userTotalWithdrawals = {};
     Object.values(allWithdrawalsData).forEach(w => {
         if (w.status === 'paid' && w.uid) {
-            userTotalWithdrawals[w.uid] = (userTotalWithdrawals[w.uid] || 0) + (w.amount || 0);
+            userTotalWithdrawals[w.uid] = (userTotalWithdrawals[w.uid] || 0) + (Number(w.amount) || 0);
         }
     });
 
@@ -542,7 +546,7 @@ function saveUserSettings(uid) {
         customRedirectLink: customLink || null
     }).then(() => {
         showNotification(customLink ? "تم حفظ إعدادات المروج والرابط المخصص ✅" : "تم حفظ إعدادات المروج ✅", "green");
-    });
+    }).catch(err => showNotification("تعذر الحفظ: " + err.message, "blue"));
 }
 
 function resetUserSettings(uid) {
@@ -606,9 +610,41 @@ function selectContactMethod(method, element){selectedContactMethod=method;docum
 function goToWithdrawPage(){document.getElementById('dashboard-section').classList.add('hidden');document.getElementById('withdraw-page').classList.remove('hidden');document.getElementById('admin-panel').classList.add('hidden');updateWithdrawPage();loadWithdrawHistory();}
 function goToDashboard(){document.getElementById('withdraw-page').classList.add('hidden');document.getElementById('dashboard-section').classList.remove('hidden');}
 
-function updateWithdrawPage(){const u=auth.currentUser;if(!u)return;db.ref('users/'+u.uid).once('value',snap=>{const d=snap.val();if(d){document.getElementById('withdraw-balance').innerText='$'+(d.withdrawableBalance||0).toFixed(2);}});}
+function updateWithdrawPage(){const u=auth.currentUser;if(!u)return;db.ref('users/'+u.uid).once('value',snap=>{const d=snap.val();if(d){document.getElementById('withdraw-balance').innerText='$'+(Number(d.withdrawableBalance)||0).toFixed(2);}});}
 
-function loadWithdrawHistory(){const u=auth.currentUser;if(!u)return;db.ref('withdrawals').once('value',snap=>{const data=snap.val();const container=document.getElementById('withdraw-history-table');if(!data){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===u.uid);if(withdrawals.length===0){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}let html='<div class="overflow-x-auto"><table class="w-full text-[10px] text-right border-collapse"><thead><tr class="text-slate-400 border-b border-white/10"><th class="p-2">التاريخ</th><th class="p-2">المبلغ</th><th class="p-2">الطريقة</th><th class="p-2">التواصل</th><th class="p-2">الحالة</th></tr></thead><tbody>';withdrawals.forEach(w=>{const date=new Date(w.timestamp).toLocaleDateString('ar-IQ');const sc=w.status==='paid'?'text-emerald-400':'text-amber-400';const st=w.status==='paid'?'✅ تم الدفع':'⏳ قيد المراجعة';html+=`<tr class="border-b border-white/5 hover:bg-white/5"><td class="p-2 font-bold text-white">${date}</td><td class="p-2 text-emerald-400 font-black">$${w.amount}</td><td class="p-2 text-blue-400 font-bold">${w.method}</td><td class="p-2 text-purple-400 font-bold">${escapeAttr(w.contact || '-')}</td><td class="p-2 font-black ${sc}">${st}</td></tr>`;});html+='</tbody></table></div>';container.innerHTML=html;});}
+function buildWithdrawalsHtml(withdrawals) {
+    let html='<div class="overflow-x-auto"><table class="w-full text-[10px] text-right border-collapse"><thead><tr class="text-slate-400 border-b border-white/10"><th class="p-2">التاريخ</th><th class="p-2">المبلغ</th><th class="p-2">الطريقة</th><th class="p-2">التواصل</th><th class="p-2">الحالة</th></tr></thead><tbody>';
+    withdrawals.forEach(w=>{
+        const date=new Date(w.timestamp || Date.now()).toLocaleDateString('ar-IQ');
+        const sc=w.status==='paid'?'text-emerald-400':'text-amber-400';
+        const st=w.status==='paid'?'✅ تم الدفع':'⏳ قيد المراجعة';
+        html+=`<tr class="border-b border-white/5 hover:bg-white/5"><td class="p-2 font-bold text-white">${date}</td><td class="p-2 text-emerald-400 font-black">$${w.amount}</td><td class="p-2 text-blue-400 font-bold">${escapeAttr(w.method)}</td><td class="p-2 text-purple-400 font-bold">${escapeAttr(w.contact || '-')}</td><td class="p-2 font-black ${sc}">${st}</td></tr>`;
+    });
+    html+='</tbody></table></div>';
+    return html;
+}
+
+function loadWithdrawHistory(){
+    const u=auth.currentUser;
+    const container=document.getElementById('withdraw-history-table');
+    if(!u || !container)return;
+    db.ref('withdrawals').orderByChild('uid').equalTo(u.uid).once('value', snap => {
+        const data=snap.val();
+        if(!data){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}
+        const withdrawals=Object.keys(data).map(k=>({id:k,...data[k]})).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+        if(withdrawals.length===0){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}
+        container.innerHTML=buildWithdrawalsHtml(withdrawals);
+    }, err => {
+        db.ref('withdrawals').once('value', snap => {
+            const data=snap.val();
+            if(!data){container.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';return;}
+            const withdrawals=Object.keys(data).map(k=>({id:k,...data[k]})).filter(w=>w.uid===u.uid).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+            container.innerHTML = withdrawals.length ? buildWithdrawalsHtml(withdrawals) : '<p class="text-[10px] text-slate-500 text-center">لا يوجد طلبات سحب بعد</p>';
+        }, fallbackErr => {
+            container.innerHTML='<p class="text-[10px] text-red-400 text-center">تعذر تحميل السجل: '+escapeAttr(fallbackErr.message)+'</p>';
+        });
+    });
+}
 
 function signInWithGoogle(){
     const provider=new firebase.auth.GoogleAuthProvider();
@@ -770,7 +806,6 @@ function checkAndRedirect(){
     }
 }
 
-// ========== إصلاح تسريب الأرباح اليومية عند التصفير ==========
 function getResetCycleKey() {
     const now = new Date();
     const cycleDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 0, 0, 0);
@@ -828,11 +863,11 @@ auth.onAuthStateChanged(u=>{if(u){document.getElementById('auth-section').classL
             checkDailyReset(u.uid);
             document.getElementById('welcome-msg').innerText=`أهلاً بك، ${d.username||'مروجنا'} ✨`;
             document.getElementById('user-uid-display').innerText = '#' + (d.shortUID || '00000');
-            document.getElementById('stat-today').innerText=`$${(d.todayBalance||0).toFixed(2)}`;
-            document.getElementById('stat-total').innerText=`$${(d.totalBalance||0).toFixed(2)}`;
-            document.getElementById('stat-withdrawable').innerText=`$${(d.withdrawableBalance||0).toFixed(2)}`;
+            document.getElementById('stat-today').innerText=`$${(Number(d.todayBalance)||0).toFixed(2)}`;
+            document.getElementById('stat-total').innerText=`$${(Number(d.totalBalance)||0).toFixed(2)}`;
+            document.getElementById('stat-withdrawable').innerText=`$${(Number(d.withdrawableBalance)||0).toFixed(2)}`;
             document.getElementById('stat-referrals').innerText=d.referralCount||0;
-            document.getElementById('stat-ref-earnings').innerText=`$${(d.refEarnings||0).toFixed(2)}`;
+            document.getElementById('stat-ref-earnings').innerText=`$${(Number(d.refEarnings)||0).toFixed(2)}`;
             document.getElementById('short-link').value=window.location.origin+window.location.pathname+"?ref="+u.uid;
             document.getElementById('ref-link').value=window.location.origin+window.location.pathname+"?r="+u.uid;
             const today=new Date().toDateString();
@@ -848,11 +883,103 @@ auth.onAuthStateChanged(u=>{if(u){document.getElementById('auth-section').classL
     }
 });
 
-function renderHistory(uid){db.ref('withdrawals').on('value',snap=>{const list=document.getElementById('user-withdraw-history'),data=snap.val();list.innerHTML="";if(!data)return;const withdrawals=Object.keys(data).reverse().map(k=>({id:k,...data[k]})).filter(w=>w.uid===uid);if(withdrawals.length===0){list.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';return;}withdrawals.slice(0,5).forEach(w=>{const paid=w.status==="paid";list.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border border-white/5"><div class="text-right"><p class="text-lg text-white font-black">$${w.amount}</p><p class="text-[9px] text-slate-500 font-bold italic lowercase">${escapeAttr(w.method)} | ${escapeAttr(w.contact||'-')}</p></div><div class="text-[10px] font-black ${paid?'text-emerald-400':'text-amber-400'}">${paid?'تم الدفع ✅':'قيد المراجعة'}</div></div>`;});});}
+function renderHistory(uid){
+    db.ref('withdrawals').on('value',snap=>{
+        const list=document.getElementById('user-withdraw-history'),data=snap.val();
+        if(!list)return;
+        list.innerHTML="";
+        if(!data){list.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';return;}
+        const withdrawals=Object.keys(data).map(k=>({id:k,...data[k]})).filter(w=>w.uid===uid).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+        if(withdrawals.length===0){list.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا يوجد سحوبات بعد</p>';return;}
+        withdrawals.slice(0,5).forEach(w=>{
+            const paid=w.status==="paid";
+            list.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border border-white/5"><div class="text-right"><p class="text-lg text-white font-black">$${w.amount}</p><p class="text-[9px] text-slate-500 font-bold italic lowercase">${escapeAttr(w.method)} | ${escapeAttr(w.contact||'-')}</p></div><div class="text-[10px] font-black ${paid?'text-emerald-400':'text-amber-400'}">${paid?'تم الدفع ✅':'قيد المراجعة'}</div></div>`;
+        });
+    }, err => {
+        const list=document.getElementById('user-withdraw-history');
+        if(list) list.innerHTML='<p class="text-[10px] text-red-400 text-center">تعذر جلب السحوبات: '+escapeAttr(err.message)+'</p>';
+    });
+}
 
-function confirmWithdraw(){const amt=parseFloat(document.getElementById('w-amount').value);const acc=document.getElementById('w-account').value.trim();const con=document.getElementById('w-contact').value.trim();const met=selectedPaymentMethod;const contactMethod=selectedContactMethod;const fullContact=contactMethod+': '+con;if(!amt||amt<10)return showNotification("الحد الأدنى للسحب 10$","blue");if(!acc)return showNotification("يرجى إدخال رقم الحساب أو المحفظة","blue");if(!con)return showNotification("يرجى إدخال معلومات التواصل","blue");const uRef=db.ref('users/'+auth.currentUser.uid);uRef.once('value',snap=>{const bal=snap.val().withdrawableBalance||0;if(amt>bal)return showNotification("رصيدك غير كافٍ","blue");uRef.update({withdrawableBalance:Number((bal-amt).toFixed(2))});db.ref('withdrawals').push({uid:auth.currentUser.uid,username:snap.val().username,amount:amt,method:met,account:acc,contact:fullContact,status:"pending",timestamp:Date.now()}).then(()=>{document.getElementById('withdraw-modal').classList.remove('hidden');document.getElementById('w-amount').value="";document.getElementById('w-account').value="";document.getElementById('w-contact').value="";updateWithdrawPage();loadWithdrawHistory();});});}
+function confirmWithdraw(){
+    const currentUser = auth.currentUser;
+    if(!currentUser) return showNotification("يرجى تسجيل الدخول أولاً", "blue");
+    const amt=parseFloat(document.getElementById('w-amount').value);
+    const acc=document.getElementById('w-account').value.trim();
+    const con=document.getElementById('w-contact').value.trim();
+    const met=selectedPaymentMethod;
+    const contactMethod=selectedContactMethod;
+    const fullContact=contactMethod+': '+con;
+    if(!amt||amt<10)return showNotification("الحد الأدنى للسحب 10$","blue");
+    if(!acc)return showNotification("يرجى إدخال رقم الحساب أو المحفظة","blue");
+    if(!con)return showNotification("يرجى إدخال معلومات التواصل","blue");
 
-function loadAdminPanel(){db.ref('users').on('value',snap=>{const users=snap.val()||{};let tc=0,au=0,te={name:'-',total:0},pc=0;Object.values(users).forEach(u=>{tc+=u.clicks||0;if(u.clicks>0)au++;if((u.totalBalance||0)>te.total){te={name:u.username,total:u.totalBalance};}});document.getElementById('admin-total-clicks').innerText=tc;document.getElementById('admin-active-users').innerText=au;document.getElementById('admin-top-earner').innerText=te.name+' ($'+te.total.toFixed(2)+')';db.ref('withdrawals').on('value',ws=>{const wd=ws.val()||{};pc=Object.values(wd).filter(w=>w.status==='pending').length;document.getElementById('admin-pending-count').innerText=pc;});});db.ref('withdrawals').on('value',snap=>{const cont=document.getElementById('admin-withdrawals');cont.innerHTML="";const data=snap.val();if(!data)return;Object.keys(data).reverse().forEach(key=>{const w=data[key];if(w.status==="paid")return;cont.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border-r-4 border-amber-500"><div class="text-right"><h4 class="font-black text-white">${escapeAttr(w.username)}</h4><p class="text-xs text-amber-400 font-bold">$${w.amount}</p><p class="text-[10px] text-slate-500 uppercase">${escapeAttr(w.method)} - ${escapeAttr(w.account)} | ${escapeAttr(w.contact||'-')}</p></div><button onclick="markAsPaid('${key}')" class="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">إتمام</button></div>`;});});}
+    const uRef=db.ref('users/'+currentUser.uid);
+    uRef.once('value',snap=>{
+        const userData = snap.val() || {};
+        const bal = Number(userData.withdrawableBalance) || 0;
+        if(amt > bal) return showNotification("رصيدك غير كافٍ","blue");
+
+        const newBal = Number((bal - amt).toFixed(2));
+        uRef.update({ withdrawableBalance: newBal }).then(() => {
+            return db.ref('withdrawals').push({
+                uid: currentUser.uid,
+                username: userData.username || currentUser.email || 'مستخدم',
+                amount: amt,
+                method: met,
+                account: acc,
+                contact: fullContact,
+                status: "pending",
+                timestamp: Date.now()
+            });
+        }).then(() => {
+            document.getElementById('withdraw-modal').classList.remove('hidden');
+            document.getElementById('w-amount').value="";
+            document.getElementById('w-account').value="";
+            document.getElementById('w-contact').value="";
+            updateWithdrawPage();
+            loadWithdrawHistory();
+        }).catch(err => {
+            showNotification("فشل إرسال طلب السحب: " + err.message, "blue");
+        });
+    }, err => {
+        showNotification("تعذر قراءة الرصيد: " + err.message, "blue");
+    });
+}
+
+function loadAdminPanel(){
+    db.ref('users').on('value',snap=>{
+        const users=snap.val()||{};
+        let tc=0,au=0,te={name:'-',total:0};
+        Object.values(users).forEach(u=>{
+            tc+=Number(u.clicks)||0;
+            if((Number(u.clicks)||0)>0)au++;
+            if((Number(u.totalBalance)||0)>te.total){te={name:u.username||'مستخدم',total:Number(u.totalBalance)||0};}
+        });
+        document.getElementById('admin-total-clicks').innerText=tc;
+        document.getElementById('admin-active-users').innerText=au;
+        document.getElementById('admin-top-earner').innerText=te.name+' ($'+te.total.toFixed(2)+')';
+    });
+
+    db.ref('withdrawals').on('value',snap=>{
+        const cont=document.getElementById('admin-withdrawals');
+        const data=snap.val()||{};
+        const pendingItems = Object.keys(data).map(k=>({key:k,...data[k]})).filter(w=>w.status!=="paid").sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+        const pendingCountEl = document.getElementById('admin-pending-count');
+        if(pendingCountEl) pendingCountEl.innerText=pendingItems.length;
+        if(!cont)return;
+        cont.innerHTML="";
+        if(pendingItems.length===0){
+            cont.innerHTML='<p class="text-[10px] text-slate-500 text-center">لا توجد طلبات سحب معلقة حالياً</p>';
+            return;
+        }
+        pendingItems.forEach(w=>{
+            cont.innerHTML+=`<div class="glass-card p-4 rounded-2xl flex justify-between items-center border-r-4 border-amber-500"><div class="text-right"><h4 class="font-black text-white">${escapeAttr(w.username)}</h4><p class="text-xs text-amber-400 font-bold">$${w.amount}</p><p class="text-[10px] text-slate-500 uppercase">${escapeAttr(w.method)} - ${escapeAttr(w.account)} | ${escapeAttr(w.contact||'-')}</p></div><button onclick="markAsPaid('${w.key}')" class="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">إتمام</button></div>`;
+        });
+    }, err => {
+        showNotification("تعذر تحميل طلبات السحب للأدمن: " + err.message, "blue");
+    });
+}
 function markAsPaid(id){db.ref('withdrawals/'+id).update({status:"paid"});}
 
 function copyToClipboard(elementId, successMessage, type = "blue") {
